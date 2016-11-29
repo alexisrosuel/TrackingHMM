@@ -1,2 +1,2 @@
 # TrackingHMM
-Face tracking using HMM
+Face tracking using HMM and particle filtering
