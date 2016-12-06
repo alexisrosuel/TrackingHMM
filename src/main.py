@@ -73,7 +73,7 @@ def main(argv):
 
 			'''
 
-			#ellipse = evaluate(particles, weight ...)
+			#ellipse = evaluate(array_picture, particles, weight ...)
 
 
 			'''
