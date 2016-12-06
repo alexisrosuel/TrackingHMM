@@ -91,7 +91,7 @@ def main(argv):
 			particles["x"] = np.random.rand(particle_number) * array_picture.shape[1]
 			particles["y"] = np.random.rand(particle_number) * array_picture.shape[0]
 
-			weights = np.random.rand(particle_number)
+			particles["weights"] = np.random.rand(particle_number)
 			
 
 			ellipse = {}
