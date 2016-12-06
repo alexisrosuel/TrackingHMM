@@ -95,8 +95,9 @@ def main(argv):
 			
 
 			ellipse = {}
-			ellipse["xy"] = [np.random.rand(1) * array_picture.shape[1],np.random.rand(1) * array_picture.shape[0]]
-			ellipse["angle"] = np.random.randint(181)
+			ellipse["x"] = np.random.rand(1) * array_picture.shape[0]
+			ellipse["y"] = np.random.rand(1) * array_picture.shape[0]
+                  ellipse["angle"] = np.random.randint(181)
 			ellipse["height"] = np.random.randint(50,150)
 
 			#Display picture/particles/ellipse
