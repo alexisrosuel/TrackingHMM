@@ -13,8 +13,6 @@ from skimage import segmentation
 from skimage import draw
 
 
-particles=np.array([{'x':150,'y':600,'weigh':4},{'x':400,'y':200,'weigh':10}])
-
 def evaluate(image_array, particles):
     """ Blablabla
     
@@ -31,32 +29,34 @@ def evaluate(image_array, particles):
     image_array_YCbCr = rgb2ycbcr(image_array)
     
     # On récupère les pixels correspondant aux particules
-    particles_likelihood = np.array([image_array_YCbCr[particle['x'],particle['y']] for particle in particles])
+    particles_pixels = np.array([image_array_YCbCr[particle['x'],particle['y']] for particle in particles])
     
     # on calcule le likelihood correspondant à chaque particule
-    particles_likelihood = skin_likelihood(particles_likelihood)
-    
-    # on ajoute cette valeur au dictionnaire des particules
-    for i in range(len(particles)):
-        particles[i]['likelihood_skin'] = particles_likelihood[i]
+    particles = skin_likelihood(particles_pixels, particles)
 
-    # On calcule les ellipses
-    #ellipses = facial_contour(image_array, particles)
+    # On calcule les cercles
+    particles = facial_contour(image_array, particles)
     
-    # on calcule les likelihood des ellipses
+    # on calcule les likelihood des cercle
+    particles = cercle_likelihood(image_array, particles)
     
+    # on conserve pour chaque particule le likelihood du cercle est max
+    for particle in particles:
+        cercle_likelihood_vector = [cercle['cercle_likelihood'] for cercle in particle['cercles']]
+        cercle_max = np.argmax(cercle_likelihood_vector)
+        particle['best_cercle'] = particle['cercles'][cercle_max]
     
     # on calcule les likelihood finaux
-#    lambda1 = 1
-#    lambda2 = 1
-#    threshold = 0
-#    for particle in particles:
-#        if particle['likelihood_skin'] < threshold:
-#            particle['likelihood'] = 0
-#        else:
-#            particle['likelihood'] = lambda1*particle['likelihood_skin'] + lambda2*particle['likelihood_ellipse']
-#    
-    #return ellipses
+    lambda1 = 1
+    lambda2 = 1
+    threshold = 0.8
+    for particle in particles:
+        if particle['skin_likelihood'] < threshold:
+            particle['likelihood'] = 0
+        else:
+            particle['likelihood'] = lambda1*particle['skin_likelihood'] + lambda2*particle['best_cercle']['cercle_likelihood']
+    
+    return particles
 
 def rgb2ycbcr(image_RGB):
     """ Transforme une image au format RGB en une image au format YCbCr
@@ -77,7 +77,7 @@ def rgb2ycbcr(image_RGB):
     ycbcr[:,:,[1,2]] += 128
     return np.uint8(ycbcr)
     
-def skin_likelihood(vector_particles):
+def skin_likelihood(vector_pixels, particles):
     """ Calcule pour chaque pixel du vecteur la valeur du likelihood
     qui représente la probabilité que le pixel soit de la peau. 
     La distribution utilisée est une loi normale bi-dimensionnelle, où
@@ -97,47 +97,54 @@ def skin_likelihood(vector_particles):
     C = np.matrix([[200,-17],
                   [-17,400]]) # a modifier plus tard avec les vrais valeurs
     C_inv = np.linalg.inv(C)
+
     
-    likelihood = np.empty(shape=vector_particles.shape[0])
+    likelihood = np.empty(shape=vector_pixels.shape[0])
     
-    for i in range(vector_particles.shape[0]):
-        pixel_color = vector_particles[i,1:]
+    for i in range(vector_pixels.shape[0]):
+        pixel_color = vector_pixels[i,1:]
         produit_mat = np.dot(np.dot(pixel_color-m,C_inv),(pixel_color-m).T)
-        likelihood[i] = np.exp(produit_mat/2)
+        particles[i]['skin_likelihood'] = np.exp(-produit_mat/2)
         
-    return likelihood
+    return particles
     
     
     
     
-def ellipse_likelihood(image_array, particles):
+def cercle_likelihood(image_array, particles):
     # on construit l'image transformée en contour
     image_grey = color.rgb2grey(image_array)
     image_contour = feature.canny(image_grey)
-        
-    threshold = 1.5
-    image_likelihood_skin = np.empty(shape=image_array.shape[0:2])
-    for particle in particles:
-        print(particle['likelihood_skin'])
-        image_likelihood_skin[particle['x'],particle['y']] = 255 if particle['likelihood_skin']>threshold else 0
     
-    image_and = image_contour*image_likelihood_skin # AND operation
-    io.imshow(image_and)
-    print(np.max(image_and))
+    # On construit ensuite l'image des likelihood    
+    threshold = 0.5
+    image_likelihood_skin = np.empty(shape=image_grey.shape)
     for particle in particles:
-        points = particle['ellipse_contour']
-        rr, cc = skimage.draw.polygon(points.T[0],points.T[1])
-        image_ellipse = np.copy(image)
-        image_ellipse[rr, cc] = 1
-        image_test = image_ellipse*image_and
-        particle['likelihood_ellipse'] = np.sum(image_test)/np.sum(image_ellipse)
-        
-        
-image = io.imread("..\\data\\sequence3\\sequence10000.png")     
-#particles[0]['ellipse_contour'] = 
-evaluate(image,particles)
-ellipse_likelihood(image,particles)     
+        image_likelihood_skin[particle['x'],particle['y']] = 255 if particle['skin_likelihood']>threshold else 0
 
+    # Pour gagner du temps on calcule ici le premier AND
+    image_AND = image_contour*image_likelihood_skin
+    
+    # on constuit enfin chaque ellipse et on enregistre son likelihood associé
+    for particle in particles:
+        for cercle in particle['cercles']:
+            image_cercle = np.zeros(shape=image_grey.shape, dtype=np.uint8)
+            rr, cc = draw.circle(cercle['r'], cercle['c'], cercle['radius'])
+            index = []
+            for i in range(len(rr)):
+                if rr[i]<0 or rr[i]>=image_grey.shape[0] or cc[i]<0 or cc[i]>=image_grey.shape[1]:
+                    index.append(i)
+            rr = np.delete(rr, index)
+            cc = np.delete(cc, index)
+            
+            image_cercle[rr,cc] = 255
+            
+            # Et on calcule le likelihood de l'ellipse
+            image_AND_cercle = image_AND*image_cercle
+            cercle['cercle_likelihood'] = np.sum(image_AND_cercle)/np.sum(image_cercle)
+    
+    return particles
+        
 
 def facial_contour(image_array, particles):
     """ 
@@ -153,36 +160,30 @@ def facial_contour(image_array, particles):
     threshold = 0
     
     # On conserve les particles qui ont un likelihood > threshold
-    particles_kept = np.array([particle for particle in particles if particle['likelihood_skin']>threshold])
+    particles_kept = np.array([particle for particle in particles if particle['skin_likelihood']>threshold])
     
-    # On crée les objets ellipses
-    ellipses = np.array([{'x': particle['x'], 'y':particle['y']} for particle in particles_kept])
+    # Nombre de cercles générées au hasard
+    N_cercles = 4
     
-    # on crée une ellipse à partir des particles['x','y']
-    M=100 #points utilisés pour construire l'ellipse
-    
-    s = np.linspace(0, 2*np.pi,100)
-    init = 25*np.array([np.cos(s), np.sin(s)]).T+[ellipses[1]['x'],ellipses[1]['y']]         
-    #elps = np.array(draw.ellipse_perimeter(ellipses[1]['x'],ellipses[1]['y'],5,5))  
-    #print(elps.shape)       
+    for particle in particles_kept:
+        # On crée les objets ellipses
+        cercles = np.array([{'r': particle['x'], 
+                             'c': particle['y'], 
+                             'radius': np.random.randint(low=10.0, high=200.0, size=1)[0], 
+                             } for i in range(N_cercles)
+                             ])
+        particle['cercles'] = cercles
 
-          
-    image_contour = segmentation.active_contour(image_array, snake=init)
-    #print(image_contour)
-    return image_contour
-   
+    return particles
     
-    #io.imshow(image_contour)
-    #image_contour = measure.find_contours(image_grey, level=0)
-    #io.imshow(image_contour)
+image = io.imread("..\\..\\scarlett.jpeg")    
+#image = io.imread("..\\data\\sequence3\\sequence10000.png")   
+    
+N_particles = 50
 
-#image = io.imread("..\\..\\scarlett.jpeg")
-#image = io.imread("..\\data\\sequence3\\sequence10000.png")
-"""
-image_ycbcr = rgb2ycbcr(image)
-skimage.io.imshow(image_ycbcr)
-"""
-#points = evaluate(image,particles)
-#print(points)
-#
-#io.imshow(image_contour)
+particles = np.array([{'x': np.random.randint(low=0,high=image.shape[0]),
+                       'y': np.random.randint(low=0,high=image.shape[1])
+                       } for i in range(N_particles)
+                      ])
+    
+particles = evaluate(image,particles)   
