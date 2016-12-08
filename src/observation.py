@@ -204,6 +204,8 @@ def generate_circles(particles):
 
     return particles
     
+"""
+Pour tester : 
 image = io.imread("..\\..\\scarlett.jpeg")    
 #image = io.imread("..\\data\\sequence3\\sequence10000.png")   
     
@@ -214,3 +216,4 @@ particles = np.array([{'x': np.random.randint(low=0,high=image.shape[0]),
                        } for i in range(N_particles)
                       ])
 particles = evaluate(image,particles)   
+"""
