@@ -12,9 +12,18 @@ from skimage import io
 from skimage import segmentation
 from skimage import draw
 
+# On définit les constantes pour éviter de les recalculer à chaque fois
+m = np.matrix([120,152])
+C = np.matrix([[85,-55],
+              [-55,85]]) # a modifier plus tard avec les vrais valeurs
+C_inv = np.linalg.inv(C)
+
+threshold = 0.01
 
 def evaluate(image_array, particles):
-    """ Blablabla
+    """ Calcule pour chaque particle son likelihood et son meilleur 
+    cercle. 
+    Temps d'execution : 473 ms
     
     Args:
     	-image array : matrice numpy de dimension 3 (axes 1, 2 : axes x, y 
@@ -28,40 +37,36 @@ def evaluate(image_array, particles):
     # On converti l'image au format YCbCr
     image_array_YCbCr = rgb2ycbcr(image_array)
     
-    # On récupère les pixels correspondant aux particules
-    particles_pixels = np.array([image_array_YCbCr[particle['x'],particle['y']] for particle in particles])
+    # On construit aussi l'image en likelihood
+    image_likelihood = skin_likelihood(image_array_YCbCr)
     
-    # on calcule le likelihood correspondant à chaque particule
-    particles = skin_likelihood(particles_pixels, particles)
+    # On ajoute pour chaque particule la valeur du likelihood
+    for particle in particles:
+        particle['skin_likelihood'] = image_likelihood[particle['x'],particle['y']]
 
     # On calcule les cercles
-    particles = facial_contour(image_array, particles)
-    
+    particles = generate_circles(particles)
+        
     # on calcule les likelihood des cercle
-    particles = cercle_likelihood(image_array, particles)
-    
-    # on conserve pour chaque particule le likelihood du cercle est max
-    for particle in particles:
-        cercle_likelihood_vector = [cercle['cercle_likelihood'] for cercle in particle['cercles']]
-        cercle_max = np.argmax(cercle_likelihood_vector)
-        particle['best_cercle'] = particle['cercles'][cercle_max]
+    particles = cercle_likelihood(image_array, image_likelihood, particles)
     
     # on calcule les likelihood finaux
     lambda1 = 1
     lambda2 = 1
-    threshold = 0.8
+    global threshold
     for particle in particles:
         if particle['skin_likelihood'] < threshold:
             particle['likelihood'] = 0
         else:
             particle['likelihood'] = lambda1*particle['skin_likelihood'] + lambda2*particle['best_cercle']['cercle_likelihood']
     
-    return particles
+    return particles 
 
 def rgb2ycbcr(image_RGB):
     """ Transforme une image au format RGB en une image au format YCbCr
     selon la méthode décrite dans l'article. Méthode absente de la 
     version stable de skimage, mais déjà terminée en dev.
+    temps d'execution : 100 ms 
     
     Args:
     	matrice numpy de dimension 3 (axes 1, 2 : axes x, y de l'image
@@ -77,87 +82,106 @@ def rgb2ycbcr(image_RGB):
     ycbcr[:,:,[1,2]] += 128
     return np.uint8(ycbcr)
     
-def skin_likelihood(vector_pixels, particles):
-    """ Calcule pour chaque pixel du vecteur la valeur du likelihood
+def skin_likelihood(image_ycbcr):
+    """ Calcule pour chaque pixel de l'image la valeur du likelihood
     qui représente la probabilité que le pixel soit de la peau. 
     La distribution utilisée est une loi normale bi-dimensionnelle, où
     la moyenne et la matrice de variance covariance est fixée (valeurs 
     classique qui fonctionnent bien)
+    Temps d'execution : 150 ms
     
     Args:
-    	matrice numpy de dimension 2 (axe 1 : liste des particules, 
-     axe 2 : Y, Cb, Cr)
+    	matrice numpy de dimension 3 (axe 1,2 : coordonnées x,y, 
+     axe 3 : Y, Cb, Cr)
     	
     Returns:
-    	matrice numpy de dimension 1 (axe 1 : liste des likelihood)
+    	matrice numpy de dimension 2 (axe 1,2 : coordonnées x,y)
+    """
+    global m
+    global C_inv
+    
+    image_cbcr = image_ycbcr[:,:,1:]
+    image_cbcr = image_cbcr - np.array([120,150])
+    s1=np.einsum('ijk,kl->ijk',image_cbcr,C_inv)
+    s2=np.einsum('ijk,ijk->ij',image_cbcr,s1)
+    return np.exp(-s2/2)
+    
+    
+def cercle_likelihood(image, image_likelihood, particles):
+    """ Calcule pour chaque cercle candidat son likelihood
+    Temps d'execution : 250 ms
+    
+    Args:
+     image originale : matrice numpy de dimension 3 (axe 1,2 : coordonnées x,y, 
+     axe 3 : R, G, B)
+     image 'version' skin likelihood  : matrice numpy de dimension 2
+     particles : numpy array de dimension 1 (axe 1 : dictionnaire)
+    	
+    Returns:
+    	particles : numpy array de dimension 1 (axe 1 : dictionnaire)
     """
     
-    # On définit les paramètres de la distribution likelihood
-    m = np.matrix([120,150])
-    C = np.matrix([[200,-17],
-                  [-17,400]]) # a modifier plus tard avec les vrais valeurs
-    C_inv = np.linalg.inv(C)
-
-    
-    likelihood = np.empty(shape=vector_pixels.shape[0])
-    
-    for i in range(vector_pixels.shape[0]):
-        pixel_color = vector_pixels[i,1:]
-        produit_mat = np.dot(np.dot(pixel_color-m,C_inv),(pixel_color-m).T)
-        particles[i]['skin_likelihood'] = np.exp(-produit_mat/2)
-        
-    return particles
-    
-    
-    
-    
-def cercle_likelihood(image_array, particles):
     # on construit l'image transformée en contour
-    image_grey = color.rgb2grey(image_array)
-    image_contour = feature.canny(image_grey)
+    image_grey = color.rgb2grey(image) # 33 ms
+    image_contour = feature.canny(image_grey) # 140 ms
     
     # On construit ensuite l'image des likelihood    
-    threshold = 0.5
-    image_likelihood_skin = np.empty(shape=image_grey.shape)
-    for particle in particles:
-        image_likelihood_skin[particle['x'],particle['y']] = 255 if particle['skin_likelihood']>threshold else 0
-
-    # Pour gagner du temps on calcule ici le premier AND
-    image_AND = image_contour*image_likelihood_skin
+    global threshold
+    image_likelihood_bin = (image_likelihood>threshold).astype(np.uint8) # 1.48 ms
     
-    # on constuit enfin chaque ellipse et on enregistre son likelihood associé
+    # Pour gagner du temps on calcule ici le premier AND
+    image_AND = image_contour*image_likelihood_bin
+    
+    # on constuit enfin chaque cercle et on enregistre son likelihood associé
+    # enfin, on conserve le meilleur cercle
     for particle in particles:
+        ind_best_cercle = -1
+        lik_best_cercle = 0
+        ind = -1
         for cercle in particle['cercles']:
+            ind = ind+1
             image_cercle = np.zeros(shape=image_grey.shape, dtype=np.uint8)
             rr, cc = draw.circle(cercle['r'], cercle['c'], cercle['radius'])
-            index = []
-            for i in range(len(rr)):
-                if rr[i]<0 or rr[i]>=image_grey.shape[0] or cc[i]<0 or cc[i]>=image_grey.shape[1]:
-                    index.append(i)
+            
+            index1 = np.argwhere(rr<0)
+            index2 = np.argwhere(cc<0)
+            index3 = np.argwhere(rr>=image_grey.shape[0])
+            index4 = np.argwhere(cc>=image_grey.shape[1]) 
+            index = np.concatenate((index1,index2,index3,index4),axis=0)
             rr = np.delete(rr, index)
             cc = np.delete(cc, index)
             
-            image_cercle[rr,cc] = 255
+            image_cercle[rr,cc] = 1
             
-            # Et on calcule le likelihood de l'ellipse
+            # Et on calcule le likelihood du cercle
             image_AND_cercle = image_AND*image_cercle
             cercle['cercle_likelihood'] = np.sum(image_AND_cercle)/np.sum(image_cercle)
+        
+            # On enregistre la nouvelle valeur si elle est mieux
+            if cercle['cercle_likelihood'] > lik_best_cercle:
+                ind_best_cercle = ind
+                lik_best_cercle = cercle['cercle_likelihood']
+
+        if ind_best_cercle > -1:
+            particle['best_cercle'] = particle['cercles'][ind_best_cercle]
     
     return particles
         
 
-def facial_contour(image_array, particles):
-    """ 
+def generate_circles(particles):
+    """ Génère aléatoirement des cercles centrés sur chaque particule,
+    mais de rayon tiré uniformément dans l'intervalle 10 pixels - 200 pixels
+    Temps d'execution : 468 µs
     
     Args:
-    	matrice numpy de dimension 1 (valeur du likelihood) 
+    	matrice numpy de dimension 1 (dictionnaire)
     	
     Returns:
-    	-
+    	matrice numpy de dimension 1 (dictionnaire)
     """
     
     # skin color threshold value
-    threshold = 0
+    global threshold
     
     # On conserve les particles qui ont un likelihood > threshold
     particles_kept = np.array([particle for particle in particles if particle['skin_likelihood']>threshold])
@@ -165,25 +189,28 @@ def facial_contour(image_array, particles):
     # Nombre de cercles générées au hasard
     N_cercles = 4
     
-    for particle in particles_kept:
-        # On crée les objets ellipses
-        cercles = np.array([{'r': particle['x'], 
-                             'c': particle['y'], 
-                             'radius': np.random.randint(low=10.0, high=200.0, size=1)[0], 
-                             } for i in range(N_cercles)
-                             ])
-        particle['cercles'] = cercles
+    for particle in particles:
+        # On génère des ellipses candidates que pour les particles suivantes
+        if particle['skin_likelihood'] > threshold:
+            # On crée les objets ellipses
+            cercles = np.array([{'r': particle['x'], 
+                                 'c': particle['y'], 
+                                 'radius': np.random.randint(low=10.0, high=200.0, size=1)[0], 
+                                 } for i in range(N_cercles)
+                                 ])
+            particle['cercles'] = cercles
+        else:
+            particle['cercles'] = np.array([])
 
     return particles
     
 image = io.imread("..\\..\\scarlett.jpeg")    
 #image = io.imread("..\\data\\sequence3\\sequence10000.png")   
     
-N_particles = 50
+N_particles = 100
 
 particles = np.array([{'x': np.random.randint(low=0,high=image.shape[0]),
                        'y': np.random.randint(low=0,high=image.shape[1])
                        } for i in range(N_particles)
                       ])
-    
 particles = evaluate(image,particles)   
