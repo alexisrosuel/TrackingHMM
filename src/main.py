@@ -183,8 +183,8 @@ def update_weights(particles):
 
 	for particle in particles :
 		particle["weight"] = particle["likelihood"] / normalizing_constant 
-		print(particle["weight"])
-		print("\n")
+		#print(particle["weight"])
+		#print("\n")
 	
 	return particles
 
