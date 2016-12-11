@@ -135,13 +135,13 @@ def cercle_likelihood(image, image_likelihood, particles):
     # on constuit enfin chaque cercle et on enregistre son likelihood associé
     # enfin, on conserve le meilleur cercle
     for particle in particles:
-        ind_best_cercle = -1
+        ind_best_cercle = 1
         lik_best_cercle = 0
         ind = -1
         for cercle in particle['cercles']:
             ind = ind+1
             image_cercle = np.zeros(shape=image_grey.shape, dtype=np.uint8)
-            rr, cc = draw.circle(cercle['r'], cercle['c'], cercle['radius'])
+            rr, cc = draw.circle_perimeter(cercle['r'], cercle['c'], cercle['radius'])
             
             index1 = np.argwhere(rr<0)
             index2 = np.argwhere(cc<0)
@@ -162,7 +162,8 @@ def cercle_likelihood(image, image_likelihood, particles):
                 ind_best_cercle = ind
                 lik_best_cercle = cercle['cercle_likelihood']
 
-        if ind_best_cercle > -1:
+        #Si c'est une particle qui a des cercles, on enregistre le meilleur cercle proposé 
+        if(particle['skin_likelihood']>threshold):
             particle['best_cercle'] = particle['cercles'][ind_best_cercle]
     
     return particles
@@ -204,16 +205,20 @@ def generate_circles(particles):
 
     return particles
     
-"""
-Pour tester : 
-image = io.imread("..\\..\\scarlett.jpeg")    
-#image = io.imread("..\\data\\sequence3\\sequence10000.png")   
+
+
+#image = io.imread("..\\..\\scarlett.jpeg")    
+image = io.imread("..\\data\\sequence1\\sequence10000.png")   
     
-N_particles = 100
+N_particles = 500
 
 particles = np.array([{'x': np.random.randint(low=0,high=image.shape[0]),
                        'y': np.random.randint(low=0,high=image.shape[1])
                        } for i in range(N_particles)
                       ])
 particles = evaluate(image,particles)   
-"""
+
+image_ycbcr = rgb2ycbcr(image)
+image_likelihood = skin_likelihood(image_ycbcr)
+image_skin = (image_likelihood>threshold).astype(np.uint8)
+io.imshow(image_skin)
