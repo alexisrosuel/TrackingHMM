@@ -18,7 +18,7 @@ C = np.matrix([[85,-55],
               [-55,85]]) # a modifier plus tard avec les vrais valeurs
 C_inv = np.linalg.inv(C)
 
-threshold = 0.01
+threshold = 0.03
 
 def evaluate(image_array, particles):
     """ Calcule pour chaque particle son likelihood et son meilleur 
@@ -188,7 +188,7 @@ def generate_circles(particles):
     particles_kept = np.array([particle for particle in particles if particle['skin_likelihood']>threshold])
     
     # Nombre de cercles générées au hasard
-    N_cercles = 4
+    N_cercles = 5
     
     for particle in particles:
         # On génère des ellipses candidates que pour les particles suivantes
@@ -206,9 +206,8 @@ def generate_circles(particles):
     return particles
     
 
-"""
 #image = io.imread("..\\..\\scarlett.jpeg")    
-image = io.imread("..\\data\\sequence1\\sequence10000.png")   
+image = io.imread("..\\data\\sequence1\\sequence10047.png")   
     
 N_particles = 500
 
@@ -221,4 +220,4 @@ particles = evaluate(image,particles)
 image_ycbcr = rgb2ycbcr(image)
 image_likelihood = skin_likelihood(image_ycbcr)
 image_skin = (image_likelihood>threshold).astype(np.uint8)
-io.imshow(image_skin)"""
+io.imshow(image_skin)
