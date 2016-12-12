@@ -205,7 +205,7 @@ def generate_circles(particles):
 
     return particles
     
-
+"""
 #image = io.imread("..\\..\\scarlett.jpeg")    
 image = io.imread("..\\data\\sequence1\\sequence10047.png")   
     
@@ -220,4 +220,4 @@ particles = evaluate(image,particles)
 image_ycbcr = rgb2ycbcr(image)
 image_likelihood = skin_likelihood(image_ycbcr)
 image_skin = (image_likelihood>threshold).astype(np.uint8)
-io.imshow(image_skin)
+io.imshow(image_skin)"""
