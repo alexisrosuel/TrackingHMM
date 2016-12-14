@@ -36,7 +36,7 @@ def multinomial_resample(weights):
 
 
 
-def update_particles(particles):
+def update_particles(particles,std=1):
     """
 
    Parameters
@@ -45,14 +45,16 @@ def update_particles(particles):
     particles : particles dictionnary
                 key x : array of x-coordinates of particles
                 key y : array of y-coordinates of particles
-
+    
+    std : (not sexually transmitted diseases) standard deviation for normal 
+        distribution
     Returns
     -------
 
     updated particles based on normal random step
     """
-    particles['x']=particles["x"]+np.random.normal(loc=0.0, scale=1.0, size=len(particles["x"]))
-    particles['y']=particles["y"]+np.random.normal(loc=0.0, scale=1.0, size=len(particles["y"]))
+    particles['x']=particles["x"]+np.random.normal(loc=0.0, scale=std, size=len(particles["x"]))
+    particles['y']=particles["y"]+np.random.normal(loc=0.0, scale=std, size=len(particles["y"]))
     return particles
     
 
