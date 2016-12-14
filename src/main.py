@@ -33,7 +33,7 @@ def main(argv):
 	source = args.source
 	
 	#TODO => passer cette valeur en argument du script ?
-	particle_number = 200
+	particle_number = 100
 
 
 	if(source != "webcam"):
@@ -85,32 +85,39 @@ def main(argv):
 			Predict
 
 			'''
-			particle_dict = {"x":x, "y":y}
-
-			print("10 Old particules x : {}".format(particle_dict["x"][0:10]))
-			particle_dict = update_particles(particle_dict, std=50)
 
 
-			print("10 New particules x: {}".format(particle_dict["x"][0:10]))
+			particle_dict_aux = {"x":x, "y":y}
 
-			new_x = particle_dict["x"]
-			print("10 New particules x: {}".format(new_x[0:10]))
+			'''
+
+			We can play here with the STD parameter to handle how the algorithm can catch distant faces
+
+			'''
+
+			particle_dict_aux = update_particles(particle_dict_aux, std=50)
 
 
-			new_y = particle_dict["y"]
+			new_x = particle_dict_aux["x"]
+			new_y = particle_dict_aux["y"]
 
 			new_particules = []
 			for i in range(particle_number):
+				#Position en int 
 				new_x_i = int(new_x[i])
 				new_y_i = int(new_y[i])
+				
+				'''
+				old debug
 				if (i<10):
 					print("\n")
 					print(new_x[i])
 					print(new_x_i)
 					print(array_first_picture.shape[0])
 					print("\n")
-
+				'''	
 				
+				#Deep copy pour pas avoir d'effet de bord
 				particle_dict = {}
 				particle_dict["x"] = particles[i]["x"]
 				particle_dict["y"] = particles[i]["y"]
@@ -118,26 +125,32 @@ def main(argv):
 
 				if new_x_i < array_first_picture.shape[0] and new_x_i >= 0:
 					particle_dict["x"] = new_x_i
+					
+					'''
+					old debug
 					if i<10:
 						print("New value : {}".format(new_x_i))
 						print("Particle dict : {}".format(particle_dict["x"]))
+					'''
 					
 				
 				if new_y_i < array_first_picture.shape[1] and new_y_i >= 0:
  					particle_dict["y"] = new_y_i
 				
+				#construire la nouvelle liste
 				new_particules.append(particle_dict)
 
+				'''
 				if i<10:
 					print("Particle : {}".format(new_particules[i]["x"]))
-
+				'''
  				
 
-
+			#remplacer par la nouvelle liste
 			particles = new_particules
-			print("10 New particles x: {}".format([particle["x"] for particle in particles[0:10]]))
+			#print("10 New particles x: {}".format([particle["x"] for particle in particles[0:10]]))
 
-			print("-------------")
+			#print("-------------")
 
 
 			'''
@@ -236,7 +249,7 @@ def display_picture(picture ,particles):
 
 ##TODO : optimiser cette fonction
 '''
-Fixe les poids des particules en fonction de leur likelihood, et normalise pour avoir une somme égale a 1.
+Fixe les poids des particules en fonction de leur likelihood, et normalise pour avoir une somme égale a 1 en passant par les logarithmes.
 
 Args:
     dictionnaire de particle (clé utilisée : "likelihood" et "weight")
@@ -258,11 +271,11 @@ def update_weights(particles):
 	print("likelihood list : {}".format(likelihood_list))
 
 	sum_likelihood = sum(likelihood_list)
-	print("Sum of likelihood : {}".format(sum_likelihood))
+	#print("Sum of likelihood : {}".format(sum_likelihood))
 
 
 	normalizing_constant = math.log(sum_likelihood)
-	print("Log of sum : {}".format(normalizing_constant))
+	#print("Log of sum : {}".format(normalizing_constant))
 
 	for particle in particles :
 		if not(particle["likelihood"] == 0):
