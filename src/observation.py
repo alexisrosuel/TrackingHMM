@@ -18,7 +18,7 @@ C = np.matrix([[85,-55],
               [-55,85]]) # a modifier plus tard avec les vrais valeurs
 C_inv = np.linalg.inv(C)
 
-threshold = 0.03
+threshold = 0.025
 
 def evaluate(image_array, particles):
     """ Calcule pour chaque particle son likelihood et son meilleur 

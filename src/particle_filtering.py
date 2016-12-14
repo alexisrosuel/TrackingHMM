@@ -82,6 +82,12 @@ def update_particles_mk2(particles,center):
     particles['y']=particles["y"]+np.random.normal(loc=0.0, scale=1.0, size=len(particles["y"]))
     return particles
     
+
+'''
+def update_particles_v2(particles, std=1):
+    particles['x'] = np.random.normal(loc=particles['x'], scale=std)
+'''
+
 """ 
 #For instance (integration purpose)
 index=multinomial_resample(particles[weights])

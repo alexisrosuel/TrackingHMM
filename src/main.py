@@ -33,7 +33,7 @@ def main(argv):
 	source = args.source
 	
 	#TODO => passer cette valeur en argument du script ?
-	particle_number = 1000
+	particle_number = 200
 
 
 	if(source != "webcam"):
@@ -85,24 +85,59 @@ def main(argv):
 			Predict
 
 			'''
+			particle_dict = {"x":x, "y":y}
 
-			new_particles = update_particles({"x":x, "y":y})
-			new_x = new_particles["x"]
-			new_y = new_particles["y"]
+			print("10 Old particules x : {}".format(particle_dict["x"][0:10]))
+			particle_dict = update_particles(particle_dict, std=50)
 
+
+			print("10 New particules x: {}".format(particle_dict["x"][0:10]))
+
+			new_x = particle_dict["x"]
+			print("10 New particules x: {}".format(new_x[0:10]))
+
+
+			new_y = particle_dict["y"]
+
+			new_particules = []
 			for i in range(particle_number):
 				new_x_i = int(new_x[i])
-				if new_x_i < array_first_picture.shape[0]:
-					particles[i]["x"] = int(new_x[i])
- 				
 				new_y_i = int(new_y[i])
-				if new_y_i < array_first_picture.shape[1]:
- 					particles[i]["y"] = int(new_y[i])
+				if (i<10):
+					print("\n")
+					print(new_x[i])
+					print(new_x_i)
+					print(array_first_picture.shape[0])
+					print("\n")
+
+				
+				particle_dict = {}
+				particle_dict["x"] = particles[i]["x"]
+				particle_dict["y"] = particles[i]["y"]
+				particle_dict["weight"] = particles[i]["weight"]
+
+				if new_x_i < array_first_picture.shape[0] and new_x_i >= 0:
+					particle_dict["x"] = new_x_i
+					if i<10:
+						print("New value : {}".format(new_x_i))
+						print("Particle dict : {}".format(particle_dict["x"]))
+					
+				
+				if new_y_i < array_first_picture.shape[1] and new_y_i >= 0:
+ 					particle_dict["y"] = new_y_i
+				
+				new_particules.append(particle_dict)
+
+				if i<10:
+					print("Particle : {}".format(new_particules[i]["x"]))
+
+ 				
 
 
+			particles = new_particules
+			print("10 New particles x: {}".format([particle["x"] for particle in particles[0:10]]))
 
-
-			
+			print("-------------")
 
 
 			'''
