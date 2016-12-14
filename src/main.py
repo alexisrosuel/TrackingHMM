@@ -14,6 +14,7 @@ import numpy as np
 from matplotlib.patches import Ellipse, Circle
 
 from observation import evaluate
+from particle_filtering import multinomial_resample, update_particles
 
 """
 Execute main script
@@ -31,7 +32,7 @@ def main(argv):
 	source = args.source
 	
 	#TODO => passer cette valeur en argument du script ?
-	particle_number = 400
+	particle_number = 100
 
 
 	if(source != "webcam"):
@@ -41,8 +42,26 @@ def main(argv):
 		
 		
 
+		
 
-		for file_picture in sorted(file_list):
+
+		
+		#Initialization
+		particles = []
+		sorted_file_list = sorted(file_list)
+		array_first_picture = io.imread(sorted_file_list[0], as_grey=False)
+
+
+		for _ in range(particle_number):
+			particle = {}
+			#X ET Y INVERSE POUR POUVOIR PLOT CORRECTEMENT
+			particle["x"] = int(np.random.rand(1) * array_first_picture.shape[0])
+			particle["y"] = int(np.random.rand(1) * array_first_picture.shape[1])
+			particle["weight"] = 1/particle_number
+			particles.append(particle)
+
+
+		for file_picture in sorted_file_list:
 			print(file_picture)
 			array_picture = io.imread(file_picture, as_grey=False)
 
@@ -52,26 +71,39 @@ def main(argv):
 
 			'''
 
+			weights = [particles[i]["weight"] for i in range(particle_number)]
+			particles = [particles[i] for i in multinomial_resample(weights)]
+
+			x = [particles[i]["x"] for i in range(particle_number)]
+			y = [particles[i]["y"] for i in range(particle_number)]
+
+
 			'''
 			Predict
 
 			'''
 
+			new_particles = update_particles({"x":x, "y":y})
+			new_x = new_particles["x"]
+			new_y = new_particles["y"]
+
+			for i in range(particle_number):
+				new_x_i = int(new_x[i])
+				if new_x_i < array_first_picture.shape[0]:
+					particles[i]["x"] = int(new_x[i])
+ 				
+				new_y_i = int(new_y[i])
+				if new_y_i < array_first_picture.shape[1]:
+ 					particles[i]["y"] = int(new_y[i])
+
+
+			
 			# particles = generate_particle(shape, weights, particle_number) 
 
 			
 
 
-			#Random data example to show you the structure
-			particles = []
-			for _ in range(particle_number):
-				particle = {}
-				#X ET Y INVERSE POUR POUVOIR PLOT CORRECTEMENT
-				particle["x"] = int(np.random.rand(1) * array_picture.shape[0])
-				particle["y"] = int(np.random.rand(1) * array_picture.shape[1])
-				particle["weight"] = np.random.rand(1)
-
-				particles.append(particle)
+			
 
 
 			'''
@@ -183,8 +215,8 @@ def update_weights(particles):
 
 	for particle in particles :
 		particle["weight"] = particle["likelihood"] / normalizing_constant 
-		#print(particle["weight"])
-		#print("\n")
+		print(particle["weight"])
+		print("\n")
 	
 	return particles
 

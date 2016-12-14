@@ -89,3 +89,4 @@ aux_particles={}
 aux_particles['x']=[ particles['x'].[i] for i in index]
 aux_particles['y']=[ particles['y'].[i] for i in index]
 new_particles=udpate_particles(aux_particles)
+"""
