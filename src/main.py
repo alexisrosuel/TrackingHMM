@@ -11,6 +11,7 @@ import sys, argparse,glob
 import skimage.io as io
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 from matplotlib.patches import Ellipse, Circle
 
 from observation import evaluate
@@ -32,7 +33,7 @@ def main(argv):
 	source = args.source
 	
 	#TODO => passer cette valeur en argument du script ?
-	particle_number = 100
+	particle_number = 1000
 
 
 	if(source != "webcam"):
@@ -74,6 +75,8 @@ def main(argv):
 			weights = [particles[i]["weight"] for i in range(particle_number)]
 			particles = [particles[i] for i in multinomial_resample(weights)]
 
+			print("Particle number : {}".format(len(particles)))
+
 			x = [particles[i]["x"] for i in range(particle_number)]
 			y = [particles[i]["y"] for i in range(particle_number)]
 
@@ -97,10 +100,6 @@ def main(argv):
  					particles[i]["y"] = int(new_y[i])
 
 
-			
-			# particles = generate_particle(shape, weights, particle_number) 
-
-			
 
 
 			
@@ -211,13 +210,45 @@ Returns:
 	dictionnaire de particle avec clé "weight" mise à jour
 '''
 def update_weights(particles):
+	'''
 	normalizing_constant = sum([particle["likelihood"] for particle in particles])
 
 	for particle in particles :
 		particle["weight"] = particle["likelihood"] / normalizing_constant 
 		print(particle["weight"])
 		print("\n")
-	
+	'''
+
+	likelihood_list = [particle["likelihood"] for particle in particles if not(particle["likelihood"]==0)]
+	print("likelihood list : {}".format(likelihood_list))
+
+	sum_likelihood = sum(likelihood_list)
+	print("Sum of likelihood : {}".format(sum_likelihood))
+
+
+	normalizing_constant = math.log(sum_likelihood)
+	print("Log of sum : {}".format(normalizing_constant))
+
+	for particle in particles :
+		if not(particle["likelihood"] == 0):
+			ll = math.log(particle["likelihood"])
+			#print("Log likelihood : {}".format(ll))
+			
+			#print("Log sum : {}".format(normalizing_constant))
+
+			particle["weight"] = math.exp(ll - normalizing_constant)
+
+		else:
+			#print("zero")
+			particle["weight"] = 0
+		
+
+		#print(particle["weight"])
+		#print("\n")
+
+
+	print("Sum of weights : ")
+	print(sum([particle["weight"] for particle in particles]))
 	return particles
 
 
