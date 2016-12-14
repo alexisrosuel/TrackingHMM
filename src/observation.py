@@ -12,12 +12,6 @@ from skimage import io
 from skimage import segmentation
 from skimage import draw
 
-# On définit les constantes pour éviter de les recalculer à chaque fois
-m = np.matrix([120,152])
-C = np.matrix([[85,-55],
-              [-55,85]]) # a modifier plus tard avec les vrais valeurs
-C_inv = np.linalg.inv(C)
-
 threshold = 0.025
 
 def evaluate(image_array, particles):
@@ -97,8 +91,10 @@ def skin_likelihood(image_ycbcr):
     Returns:
     	matrice numpy de dimension 2 (axe 1,2 : coordonnées x,y)
     """
-    global m
-    global C_inv
+    m = np.matrix([120,152])
+    C = np.matrix([[85,-55],
+                   [-55,85]]) # a modifier plus tard avec les vrais valeurs
+    C_inv = np.linalg.inv(C)
     
     image_cbcr = image_ycbcr[:,:,1:]
     image_cbcr = image_cbcr - np.array([120,150])
