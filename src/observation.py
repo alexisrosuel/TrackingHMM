@@ -12,7 +12,7 @@ from skimage import io
 from skimage import segmentation
 from skimage import draw
 
-threshold = 0.025
+threshold = 0.05
 
 def evaluate(image_array, particles):
     """ Calcule pour chaque particle son likelihood et son meilleur 
