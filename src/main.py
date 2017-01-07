@@ -33,9 +33,9 @@ def main(argv):
 	source = args.source
 	
 	#TODO => passer cette valeur en argument du script ?
-	particle_number = 100
+	particle_number = 25
 
-	std = 20
+	std = 10
 	if(source != "webcam"):
 		file_list = glob.glob("../data/" + source + "/*")
 		print(file_list)
@@ -171,6 +171,7 @@ def main(argv):
 			particles = update_weights(particles)
 			
 
+			average_particle = get_average_particle(particles)
 
 			'''
 			Plot picture
@@ -193,7 +194,7 @@ def main(argv):
 			'''
 
 			#Display picture/particles/ellipse
-			display_picture(picture=array_picture, particles=particles)
+			display_picture(picture=array_picture, particles=particles, average_particle=average_particle)
 
 
 
@@ -277,18 +278,30 @@ def main(argv):
 
 			particles = update_weights(particles)
 			
-
-
+			average_particle = get_average_particle(particles)
 			#Display picture/particles/ellipse
-			display_picture_opencv(picture=array_picture_bgr, particles=particles)
+			display_picture_opencv(picture=array_picture_bgr, particles=particles, average_particle=average_particle)
 
-			key = cv2.waitKey(100)
+			key = cv2.waitKey(50)
 
 
 
-		
+def get_average_particle(particles):
 
-def display_picture(picture ,particles):
+	average_particle = {}
+	average_particle["x_average"] = 0
+	average_particle["y_average"] = 0
+
+	for particle in particles:
+		average_particle["x_average"] += particle["weight"] * particle["x"]
+		average_particle["y_average"] += particle["weight"] * particle["y"]
+
+	average_particle["x_average"] = int(average_particle["x_average"])
+	average_particle["y_average"] = int(average_particle["y_average"])
+
+	return average_particle
+
+def display_picture(picture ,particles, average_particle):
 	
 	
 	fig,ax = plt.subplots(1)
@@ -324,11 +337,12 @@ def display_picture(picture ,particles):
 			circle_patch.set_edgecolor("red")
 			ax.add_patch(circle_patch)
 		
-	
+	ax.scatter(average_particle["y_average"], average_particle["x_average"], marker="x", s=200, c="g",linewidth=5.0)
+	print("Average particle :  {}".format(average_particle))
 	plt.show()
 	
 
-def display_picture_opencv(picture ,particles):
+def display_picture_opencv(picture ,particles, average_particle):
 	import cv2
 	
 
@@ -347,6 +361,7 @@ def display_picture_opencv(picture ,particles):
 			cv2.circle(picture, (circle["c"], circle["r"]), radius=int(circle["radius"]), color=(0,0,255),thickness=1)
 
 	
+	cv2.circle(picture, (average_particle["y_average"],average_particle["x_average"]), radius=10, color=(0,255,0), thickness=4)
 	cv2.imshow('video test',picture)
 
 
