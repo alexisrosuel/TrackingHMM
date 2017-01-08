@@ -70,134 +70,6 @@ def main(argv):
 			particles,average_particle = treat_frame(array_first_picture=array_first_picture, particles=particles, array_picture=array_picture, particle_number=particle_number, std=std)
 			
 
-			"""
-			'''
-			Generate particles
-
-			'''
-
-			weights = [particles[i]["weight"] for i in range(particle_number)]
-			particles = [particles[i] for i in multinomial_resample(weights)]
-
-			print("Particle number : {}".format(len(particles)))
-
-			x = [particles[i]["x"] for i in range(particle_number)]
-			y = [particles[i]["y"] for i in range(particle_number)]
-
-
-			'''
-			Predict
-
-			'''
-
-
-			particle_dict_aux = {"x":x, "y":y}
-
-			'''
-
-			We can play here with the STD parameter to handle how the algorithm can catch distant faces
-
-			'''
-
-			particle_dict_aux = update_particles(particle_dict_aux, std=std)
-
-
-			new_x = particle_dict_aux["x"]
-			new_y = particle_dict_aux["y"]
-
-			new_particules = []
-			for i in range(particle_number):
-				#Position en int 
-				new_x_i = int(new_x[i])
-				new_y_i = int(new_y[i])
-				
-				'''
-				old debug
-				if (i<10):
-					print("\n")
-					print(new_x[i])
-					print(new_x_i)
-					print(array_first_picture.shape[0])
-					print("\n")
-				'''	
-				
-				#Deep copy pour pas avoir d'effet de bord
-				particle_dict = {}
-				particle_dict["x"] = particles[i]["x"]
-				particle_dict["y"] = particles[i]["y"]
-				particle_dict["weight"] = particles[i]["weight"]
-
-				if new_x_i < array_first_picture.shape[0] and new_x_i >= 0:
-					particle_dict["x"] = new_x_i
-					
-					'''
-					old debug
-					if i<10:
-						print("New value : {}".format(new_x_i))
-						print("Particle dict : {}".format(particle_dict["x"]))
-					'''
-					
-				
-				if new_y_i < array_first_picture.shape[1] and new_y_i >= 0:
- 					particle_dict["y"] = new_y_i
-				
-				#construire la nouvelle liste
-				new_particules.append(particle_dict)
-
-				'''
-				if i<10:
-					print("Particle : {}".format(new_particules[i]["x"]))
-				'''
- 				
-
-			#remplacer par la nouvelle liste
-			particles = new_particules
-			#print("10 New particles x: {}".format([particle["x"] for particle in particles[0:10]]))
-
-			#print("-------------")
-
-
-			'''
-			Compute the likelihood of each particle
-
-			Find the best cercle of each particle
-
-			'''
-			particles = evaluate(array_picture, particles)
-
-
-
-			'''
-			Update and normalize weights with their likelihood
-
-			'''
-
-			particles = update_weights(particles)
-			
-
-			average_particle = get_average_particle(particles)
-
-			'''
-			Plot picture
-
-			Plot particle proportionally to weights
-
-			Plot ellipse/circle
-
-			'''
-			
-
-			
-			
-			'''
-			ellipse = {}
-			ellipse["x"] = np.random.rand(1) * array_picture.shape[0]
-			ellipse["y"] = np.random.rand(1) * array_picture.shape[0]
-            ellipse["angle"] = np.random.randint(181)
-			ellipse["height"] = np.random.randint(50,150)
-			'''
-			"""
-
 			#Display picture/particles/ellipse
 			display_picture(picture=array_picture, particles=particles, average_particle=average_particle)
 
@@ -225,54 +97,7 @@ def main(argv):
 			ret,array_picture_bgr = cap.read()
 			array_picture = cv2.cvtColor(array_picture_bgr, cv2.COLOR_BGR2RGB)
 		
-			"""
-			weights = [particles[i]["weight"] for i in range(particle_number)]
-			particles = [particles[i] for i in multinomial_resample(weights)]
-			x = [particles[i]["x"] for i in range(particle_number)]
-			y = [particles[i]["y"] for i in range(particle_number)]
-
-
-			particle_dict_aux = {"x":x, "y":y}
-			particle_dict_aux = update_particles(particle_dict_aux, std=std)
-
-			new_x = particle_dict_aux["x"]
-			new_y = particle_dict_aux["y"]
-
-			new_particules = []
-			for i in range(particle_number):
-				#Position en int 
-				new_x_i = int(new_x[i])
-				new_y_i = int(new_y[i])
-				
-				
-				#Deep copy pour pas avoir d'effet de bord
-				particle_dict = {}
-				particle_dict["x"] = particles[i]["x"]
-				particle_dict["y"] = particles[i]["y"]
-				particle_dict["weight"] = particles[i]["weight"]
-
-				if new_x_i < array_first_picture.shape[0] and new_x_i >= 0:
-					particle_dict["x"] = new_x_i
-					
-					
-					
-				
-				if new_y_i < array_first_picture.shape[1] and new_y_i >= 0:
- 					particle_dict["y"] = new_y_i
-				
-				#construire la nouvelle liste
-				new_particules.append(particle_dict)
-
-				
-			particles = new_particules
 			
-			particles = evaluate(array_picture, particles)
-
-			particles = update_weights(particles)
-			
-			average_particle = get_average_particle(particles)
-			"""
-
 			particles,average_particle = treat_frame(array_first_picture=array_first_picture, particles=particles, array_picture=array_picture, particle_number=particle_number, std=std)
 			
 
@@ -289,7 +114,7 @@ def treat_frame(array_first_picture, particles, array_picture, particle_number, 
 	Resample each particle according to their weight
 
 	Compute the new position of the child particle with the motion equation
-	
+
 	'''
 	#Extract x,y and weight to fit array format
 	weights = [particles[i]["weight"] for i in range(particle_number)]
@@ -403,12 +228,6 @@ def display_picture(picture ,particles, average_particle):
 
 
 
-		'''
-		#Add ellipse
-		ells = Ellipse(xy=ellipse["xy"], width=20, height=ellipse["height"], angle=ellipse["angle"])
-		ax.add_patch(ells)
-		'''
-
 		#Add circle if particle has key best_cercle
 		if "best_cercle" in particle:
 			#Add circle
@@ -456,7 +275,6 @@ def display_picture_opencv(picture ,particles, average_particle):
 
 
 
-##TODO : optimiser cette fonction
 '''
 Fixe les poids des particules en fonction de leur likelihood, et normalise pour avoir une somme égale a 1 en passant par les logarithmes.
 
