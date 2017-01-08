@@ -291,14 +291,25 @@ def get_average_particle(particles):
 	average_particle = {}
 	average_particle["x_average"] = 0
 	average_particle["y_average"] = 0
+	average_particle["c_average"] = 0
+	average_particle["r_average"] = 0
+	average_particle["radius_average"] = 0
 
 	for particle in particles:
 		average_particle["x_average"] += particle["weight"] * particle["x"]
 		average_particle["y_average"] += particle["weight"] * particle["y"]
 
+		if "best_cercle" in particle:
+			circle = particle["best_cercle"]
+			average_particle["c_average"] += particle["weight"] * circle["c"]
+			average_particle["r_average"] += particle["weight"] * circle["r"]
+			average_particle["radius_average"] += particle["weight"] * circle["radius"]
+
 	average_particle["x_average"] = int(average_particle["x_average"])
 	average_particle["y_average"] = int(average_particle["y_average"])
-
+	average_particle["c_average"] = int(average_particle["c_average"])
+	average_particle["r_average"] = int(average_particle["r_average"])
+	average_particle["radius_average"] = int(average_particle["radius_average"])
 	return average_particle
 
 def display_picture(picture ,particles, average_particle):
@@ -338,6 +349,13 @@ def display_picture(picture ,particles, average_particle):
 			ax.add_patch(circle_patch)
 		
 	ax.scatter(average_particle["y_average"], average_particle["x_average"], marker="x", s=200, c="g",linewidth=5.0)
+
+	circle_patch_av = Circle(xy=(average_particle["c_average"], average_particle["r_average"]), radius=average_particle["radius_average"], linewidth=5.0)
+	circle_patch_av.set_facecolor("None")
+	circle_patch_av.set_edgecolor("green")
+	ax.add_patch(circle_patch_av)
+
+
 	print("Average particle :  {}".format(average_particle))
 	plt.show()
 	
@@ -361,7 +379,8 @@ def display_picture_opencv(picture ,particles, average_particle):
 			cv2.circle(picture, (circle["c"], circle["r"]), radius=int(circle["radius"]), color=(0,0,255),thickness=1)
 
 	
-	cv2.circle(picture, (average_particle["y_average"],average_particle["x_average"]), radius=10, color=(0,255,0), thickness=4)
+	cv2.circle(picture, (average_particle["y_average"],average_particle["x_average"]), radius=3, color=(0,255,0), thickness=4)
+	cv2.circle(picture, (average_particle["c_average"], average_particle["r_average"]), radius=average_particle["radius_average"], color=(0,255,0),thickness=4)
 	cv2.imshow('video test',picture)
 
 
