@@ -26,7 +26,7 @@ def multinomial_resample(weights):
     -------
 
     indexes : ndarray of ints
-        array of indexes into the weights defining the resample. i.e. the
+        array of indexes
         
     """
     cumulative_sum = np.cumsum(weights)
@@ -46,8 +46,7 @@ def update_particles(particles,std=1):
                 key x : array of x-coordinates of particles
                 key y : array of y-coordinates of particles
     
-    std : (not sexually transmitted diseases) standard deviation for normal 
-        distribution
+    std : standard deviation for normal distribution
     Returns
     -------
 
@@ -58,7 +57,28 @@ def update_particles(particles,std=1):
     return particles
     
 
-    
+def multinomial_resample_mk2(weights):
+    """
+
+   Parameters
+   ----------
+
+    weights : list-like of float
+        list of weights as floats
+
+   Returns
+    -------
+
+    indexes : ndarray of ints
+        array of indexes
+        
+    """
+    cumulative_sum = np.cumsum(weights)
+    cumulative_sum[-1] = 1.  # avoid error, sum=1
+    rand=np.sort(random(len(weights)))
+    #print(rand)
+    #print(weights)
+    return np.searchsorted(cumulative_sum, rand)    
     
     
 def update_particles_mk2(particles,center):
