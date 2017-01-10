@@ -15,7 +15,7 @@ import math
 from matplotlib.patches import Ellipse, Circle
 
 from observation import evaluate
-from particle_filtering import multinomial_resample, update_particles
+from particle_filtering import multinomial_resample_mk2, update_particles
 
 """
 Execute main script
@@ -23,17 +23,21 @@ Execute main script
 Exemple of execution :
 python3 main.py --source "sequence1"
 
+with fulldisplay :
+python3 main.py --source "sequence1" --fulldisplay
+
 """
 
 
 def main(argv):
 	parser = argparse.ArgumentParser(description='Main script')
 	parser.add_argument('--source', required=True, help='source for the pictures')
+	parser.add_argument('--fulldisplay', required=False,action='store_true', help='activate full display and see all particles/cercles')
 	args = parser.parse_args()
 	source = args.source
-	
+	fulldisplay = args.fulldisplay
 	#TODO => passer cette valeur en argument du script ?
-	particle_number = 100
+	particle_number = 35
 
 	std = 75
 	if(source != "webcam"):
@@ -71,7 +75,7 @@ def main(argv):
 			
 
 			#Display picture/particles/ellipse
-			display_picture(picture=array_picture, particles=particles, average_particle=average_particle)
+			display_picture(picture=array_picture, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
 
 
 
@@ -102,9 +106,9 @@ def main(argv):
 			
 
 			#Display picture/particles/ellipse
-			display_picture_opencv(picture=array_picture_bgr, particles=particles, average_particle=average_particle)
+			display_picture_opencv(picture=array_picture_bgr, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
 
-			key = cv2.waitKey(50)
+			key = cv2.waitKey(1)
 
 
 def treat_frame(array_first_picture, particles, array_picture, particle_number, std):
@@ -118,7 +122,7 @@ def treat_frame(array_first_picture, particles, array_picture, particle_number, 
 	'''
 	#Extract x,y and weight to fit array format
 	weights = [particles[i]["weight"] for i in range(particle_number)]
-	particles = [particles[i] for i in multinomial_resample(weights)]
+	particles = [particles[i] for i in multinomial_resample_mk2	(weights)]
 	x = [particles[i]["x"] for i in range(particle_number)]
 	y = [particles[i]["y"] for i in range(particle_number)]
 
@@ -208,7 +212,7 @@ def get_average_particle(particles):
 	average_particle["radius_average"] = int(average_particle["radius_average"])
 	return average_particle
 
-def display_picture(picture ,particles, average_particle):
+def display_picture(picture ,particles, average_particle, fulldisplay):
 	
 	
 	fig,ax = plt.subplots(1)
@@ -250,7 +254,7 @@ def display_picture(picture ,particles, average_particle):
 	plt.show()
 	
 
-def display_picture_opencv(picture ,particles, average_particle):
+def display_picture_opencv(picture ,particles, average_particle, fulldisplay):
 	import cv2
 	
 
@@ -258,16 +262,19 @@ def display_picture_opencv(picture ,particles, average_particle):
 	for particle in particles:
 
 		#X ET Y inverse pour pouvoir plot correctement
-		cv2.circle(picture, (particle["y"],particle["x"]), radius=int(particle["weight"]*20), color=(255,0,0), thickness=3)
+		if fulldisplay:
+			cv2.circle(picture, (particle["y"],particle["x"]), radius=int(particle["weight"]*20), color=(255,0,0), thickness=3)
 
 
 		#Add circle if particle has key best_cercle
-		if "best_cercle" in particle:
+		
+
+		if fulldisplay and ("best_cercle" in particle):
 			#Add circle
 			#ENCORE INVERSE X ET Y 
 			circle = particle["best_cercle"]
 			cv2.circle(picture, (circle["c"], circle["r"]), radius=int(circle["radius"]), color=(0,0,255),thickness=1)
-
+		
 	
 	cv2.circle(picture, (average_particle["y_average"],average_particle["x_average"]), radius=3, color=(0,255,0), thickness=4)
 	cv2.circle(picture, (average_particle["c_average"], average_particle["r_average"]), radius=average_particle["radius_average"], color=(0,255,0),thickness=4)
@@ -300,9 +307,13 @@ def update_weights(particles):
 	sum_likelihood = sum(likelihood_list)
 	#print("Sum of likelihood : {}".format(sum_likelihood))
 
+	try:
+		normalizing_constant = math.log(sum_likelihood)
+		#print("Log of sum : {}".format(normalizing_constant))
 
-	normalizing_constant = math.log(sum_likelihood)
-	#print("Log of sum : {}".format(normalizing_constant))
+	except ValueError:
+		print("Warning : All the likelihood summed to zero, nothing was detected")
+
 
 	for particle in particles :
 		if not(particle["likelihood"] == 0):
