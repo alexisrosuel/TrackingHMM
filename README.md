@@ -11,7 +11,7 @@ Face tracking using HMM and particle filtering based on facial contour and skin 
 
 
 ## How to use
-You can launch the project with the `main.py` script. 
+You can launch the project with the `main.py` script in the `src` folder. 
 
 
 #### Source
