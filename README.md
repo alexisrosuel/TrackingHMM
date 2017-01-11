@@ -28,6 +28,11 @@ If you want to display the full particles and cercles, use the `--fulldisplay` a
 
 - live webcam with standard display : `python3 main.py --source webcam`
 
+#### Tweaking
+- You can play with the `particle_number` and `std` variables from the `main.py` script to adjust the particule number and the standard deviation of the motion equation.
+- You can also play with the `threshold` variable in the `observation.py` script to play with the threshold of likelihood a particle must have to be considered as skin color.
+
+
 ## Requirements
 This scripts runs on Python 3 using the following libraries :
 - scikit-image
