@@ -1,6 +1,9 @@
 TrackingHMM
 ============
 
+![Tracking example](http://imgur.com/a/oFt0F)
+
+
 ## Idea
 Face tracking using HMM and particle filtering based on facial contour and skin color.
 
