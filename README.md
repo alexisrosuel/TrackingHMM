@@ -18,6 +18,11 @@ With the `--source` argument you can specify the source of the video :
 ### Display
 If you want to display the full particles and cercles, use the `--fulldisplay` argument.
 
+### Exemple :
+- running the script on sequence 1 with full display : `python3 main.py --source sequence1 --fulldisplay`
+
+- running the script on the webcam with standard display : `python3 main.py --source webcam`
+
 ## Requirements
 This scripts runs on Python 3 using the following libraries :
 - scikit-image
