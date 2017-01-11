@@ -1,7 +1,9 @@
+![Tracking example](http://i.imgur.com/0E7mwLE.png)
+
+
 TrackingHMM
 ============
 
-![Tracking example](http://i.imgur.com/0E7mwLE.png)
 
 
 ## Idea
@@ -35,6 +37,6 @@ This scripts runs on Python 3 using the following libraries :
 - scipy
 
 ## Contributors 
-Pascal Jauffret, Alexis Rosuel, Duc-Vinh Tran
+Pascal Jauffret, Alexis Rosuel & Duc-Vinh Tran
 
 
