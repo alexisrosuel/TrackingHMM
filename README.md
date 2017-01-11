@@ -1,7 +1,7 @@
 TrackingHMM
 ============
 
-![Tracking example](http://imgur.com/a/oFt0F)
+![Tracking example](http://i.imgur.com/oE0Og0L.png)
 
 
 ## Idea
