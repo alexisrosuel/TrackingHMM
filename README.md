@@ -1,8 +1,8 @@
-![Tracking example](http://i.imgur.com/0E7mwLE.png)
-
-
 TrackingHMM
 ============
+
+
+![Tracking example](http://i.imgur.com/0E7mwLE.png)
 
 
 
