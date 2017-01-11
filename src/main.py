@@ -37,7 +37,7 @@ def main(argv):
 	source = args.source
 	fulldisplay = args.fulldisplay
 	#TODO => passer cette valeur en argument du script ?
-	particle_number = 35
+	particle_number = 1000
 
 	std = 75
 	if(source != "webcam"):
@@ -71,11 +71,11 @@ def main(argv):
 			array_picture = io.imread(file_picture, as_grey=False)
 
 
-			particles,average_particle = treat_frame(array_first_picture=array_first_picture, particles=particles, array_picture=array_picture, particle_number=particle_number, std=std)
+			particles,average_particle = treat_frame(array_first_picture=array_first_picture, particles=particles, array_picture=array_picture, particle_number=particle_number, std=std, opencv=False, fulldisplay=fulldisplay)
 			
 
 			#Display picture/particles/ellipse
-			display_picture(picture=array_picture, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
+			#display_picture(picture=array_picture, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
 
 
 
@@ -102,16 +102,57 @@ def main(argv):
 			array_picture = cv2.cvtColor(array_picture_bgr, cv2.COLOR_BGR2RGB)
 		
 			
-			particles,average_particle = treat_frame(array_first_picture=array_first_picture, particles=particles, array_picture=array_picture, particle_number=particle_number, std=std)
+			particles,average_particle = treat_frame(array_first_picture=array_first_picture, particles=particles, array_picture=array_picture, particle_number=particle_number, std=std, opencv=True, array_picture_bgr=array_picture_bgr, fulldisplay=fulldisplay)
 			
 
 			#Display picture/particles/ellipse
-			display_picture_opencv(picture=array_picture_bgr, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
+			#display_picture_opencv(picture=array_picture_bgr, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
 
 			key = cv2.waitKey(1)
 
 
-def treat_frame(array_first_picture, particles, array_picture, particle_number, std):
+def treat_frame(array_first_picture, particles, array_picture, particle_number, std, opencv,  fulldisplay,array_picture_bgr=None):
+
+
+	
+	
+	'''
+	Compute the likelihood of each particle
+
+	Find the best cercle of each particle
+
+	'''
+	particles = evaluate(array_picture, particles)
+
+
+
+	'''
+	Update and normalize weights with their likelihood
+
+	'''
+
+	particles = update_weights(particles)
+
+
+	'''
+	Find the average particle and cercle
+	'''
+	
+	average_particle = get_average_particle(particles)
+
+
+	'''
+
+	Display particles (and their cercles) with regards to the fulldisplay and opencv parameters
+
+	'''
+	if opencv:
+		display_picture_opencv(picture=array_picture_bgr, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
+
+
+	else:
+		display_picture(picture=array_picture, particles=particles, average_particle=average_particle, fulldisplay=fulldisplay)
+
 
 	'''
 
@@ -160,29 +201,6 @@ def treat_frame(array_first_picture, particles, array_picture, particle_number, 
 	#Replace
 	particles = new_particules
 
-	
-	'''
-	Compute the likelihood of each particle
-
-	Find the best cercle of each particle
-
-	'''
-	particles = evaluate(array_picture, particles)
-
-
-
-	'''
-	Update and normalize weights with their likelihood
-
-	'''
-
-	particles = update_weights(particles)
-
-	'''
-	Find the average particle and cercle
-	'''
-	
-	average_particle = get_average_particle(particles)
 			
 	return particles, average_particle
 
